@@ -19,7 +19,7 @@ public class WalletTest {
     public void setUp() {
         testCounter++;
         System.out.println("\n[LIFECYCLE] @BeforeEach - Test #" + testCounter + " Preparation");
-        wallet = new Wallet("Test User");
+        wallet = new Wallet(new Owner("000", "Test User", "test@example.com"));
         System.out.println("Created fresh Wallet instance for test");
     }
 
@@ -46,9 +46,10 @@ public class WalletTest {
         @Order(1)
         public void testConstructor() {
             // Test: Execute constructor, verify fields
-            wallet.setOwner("Azril");
+            Owner owner = new Owner("001", "Azril", "azril@example.com");
+            wallet.setOwner(owner);
             
-            assertEquals("Azril", wallet.getOwner());
+            assertEquals("Azril", wallet.getOwner().getName());
             assertEquals(0.0, wallet.getCash());
             assertEquals(0, wallet.getCardCount());
         }
@@ -61,7 +62,7 @@ public class WalletTest {
         @Order(2)
         public void testDeposit() {
             // Test: Deposit money, verify the balance
-            wallet.setOwner("Naziri");
+            wallet.setOwner(new Owner("002", "Naziri", "naziri@example.com"));
             
             wallet.deposit(100000.0);
             
@@ -72,7 +73,7 @@ public class WalletTest {
         @Order(3)
         public void testMultipleDeposits() {
             // Test: Multiple deposits, verify cumulative balance
-            wallet.setOwner("Ghani");
+            wallet.setOwner(new Owner("003", "Ghani", "ghani@example.com"));
             
             wallet.deposit(50000.0);
             wallet.deposit(75000.0);
@@ -84,7 +85,7 @@ public class WalletTest {
         @Order(4)
         public void testDepositNegativeAmount() {
             // Test: Deposit negative amount should not change balance
-            wallet.setOwner("Prabowo");
+            wallet.setOwner(new Owner("004", "Prabowo", "prabowo@example.com"));
             
             wallet.deposit(100000.0);
             wallet.deposit(-50000.0);
@@ -98,9 +99,9 @@ public class WalletTest {
     class WithdrawalTests {
         @Test
         @Order(5)
-        public void testWithdraw() {
+        public void testWithdraw() throws InsufficientFundsException {
             // Test: Withdraw money, verify the balance
-            wallet.setOwner("Ariel");
+            wallet.setOwner(new Owner("005", "Ariel", "ariel@example.com"));
             
             wallet.deposit(100000.0);
             wallet.withdraw(50000.0);
@@ -110,9 +111,9 @@ public class WalletTest {
 
         @Test
         @Order(6)
-        public void testWithdrawExactBalance() {
+        public void testWithdrawExactBalance() throws InsufficientFundsException {
             // Test: Withdraw exact balance amount
-            wallet.setOwner("Panji");
+            wallet.setOwner(new Owner("006", "Panji", "panji@example.com"));
             
             wallet.deposit(100000.0);
             wallet.withdraw(100000.0);
@@ -124,11 +125,11 @@ public class WalletTest {
         @Order(7)
         public void testWithdrawInsufficientFunds() {
             // Test: Withdraw money more than balance - error case
-            wallet.setOwner("Ickwan");
+            wallet.setOwner(new Owner("007", "Ickwan", "ickwan@example.com"));
             
             wallet.deposit(50000.0);
             
-            assertThrows(IllegalArgumentException.class, () -> {
+            assertThrows(InsufficientFundsException.class, () -> {
                 wallet.withdraw(100000.0);
             });
         }
@@ -137,10 +138,13 @@ public class WalletTest {
         @Order(8)
         public void testWithdrawNegativeAmount() {
             // Test: Withdraw negative amount should not change balance
-            wallet.setOwner("Gibran");
+            wallet.setOwner(new Owner("008", "Gibran", "gibran@example.com"));
             
             wallet.deposit(100000.0);
-            wallet.withdraw(-50000.0);
+            
+            assertThrows(IllegalArgumentException.class, () -> {
+                wallet.withdraw(-50000.0);
+            });
             
             assertEquals(100000.0, wallet.getCash());
         }
@@ -153,7 +157,7 @@ public class WalletTest {
         @Order(9)
         public void testAddCard() {
             // Test: Add card, verify card count and existence
-            wallet.setOwner("Faiz");
+            wallet.setOwner(new Owner("009", "Faiz", "faiz@example.com"));
             
             wallet.addCard("BCA", 12345678);
             
@@ -165,7 +169,7 @@ public class WalletTest {
         @Order(10)
         public void testAddMultipleCards() {
             // Test: Add multiple cards from different banks
-            wallet.setOwner("Lala");
+            wallet.setOwner(new Owner("010", "Lala", "lala@example.com"));
             
             wallet.addCard("BCA", 11111111);
             wallet.addCard("Mandiri", 22222222);
@@ -181,7 +185,7 @@ public class WalletTest {
         @Order(11)
         public void testRemoveCard() {
             // Test: Remove card by account number, verify count decreased
-            wallet.setOwner("Nabil");
+            wallet.setOwner(new Owner("011", "Nabil", "nabil@example.com"));
             
             wallet.addCard("BCA", 12345678);
             boolean removed = wallet.removeCard(12345678);
@@ -195,7 +199,7 @@ public class WalletTest {
         @Order(12)
         public void testRemoveNonExistentCard() {
             // Test: Remove non-existent card - error case
-            wallet.setOwner("Jokowi");
+            wallet.setOwner(new Owner("012", "Jokowi", "jokowi@example.com"));
             
             wallet.addCard("BCA", 12345678);
             boolean removed = wallet.removeCard(99999999);
@@ -212,13 +216,15 @@ public class WalletTest {
         @Order(13)
         public void testSetOwner() {
             // Test: Change owner, verify new owner
-            wallet.setOwner("Original Owner");
-            String oldOwner = wallet.getOwner();
+            Owner originalOwner = new Owner("100", "Original Owner", "original@example.com");
+            wallet.setOwner(originalOwner);
+            Owner oldOwner = wallet.getOwner();
             
-            wallet.setOwner("New Owner");
+            Owner newOwner = new Owner("101", "New Owner", "new@example.com");
+            wallet.setOwner(newOwner);
             
-            assertEquals("New Owner", wallet.getOwner());
-            assertNotEquals(oldOwner, wallet.getOwner());
+            assertEquals("New Owner", wallet.getOwner().getName());
+            assertNotEquals(oldOwner.getName(), wallet.getOwner().getName());
         }
     }
 
@@ -227,8 +233,8 @@ public class WalletTest {
     class IntegrationTests {
         @Test
         @Order(14)
-        public void testCompleteScenario() {
-            wallet.setOwner("Ahok");
+        public void testCompleteScenario() throws InsufficientFundsException {
+            wallet.setOwner(new Owner("999", "Ahok", "ahok@example.com"));
             
             // Add cards
             wallet.addCard("BCA", 11111111);
